@@ -1,0 +1,203 @@
+link do wokwi para fácil acesso - https://wokwi.com/projects/415172190285305857
+
+link do video no youtube - https://youtu.be/wXxKtSZJEFU
+
+segue o codigo fonte do projeto para eventuais problemas com o link
+
+
+
+
+copiar e colar no SKETCH.INO do wokwi
+
+
+#include <ThingerESP32.h>
+
+// Credenciais do Thinger.io
+#define USERNAME "Araki"           // Seu nome de usuário na plataforma thinger.io
+#define DEVICE_ID "device_id"      // Device ID criado na plataforma
+#define DEVICE_CREDENTIAL "credential"  // Credencial do device criada na plataforma
+#define SSID "Wokwi-GUEST" 
+#define SSID_PASSWORD "" 
+
+ThingerESP32 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+
+// Variáveis globais
+String ID = "GS_2024";     // Identificador do dispositivo
+int valorConsumo = 0;      // Corrente simulada em Amperes
+int valorPotenciometro = 0; // Valor lido do potenciômetro
+float consumoEnergia = 0;  // Consumo acumulado em kWh
+
+unsigned long ultimoCalculo = 0;         // Controle do tempo para cálculo
+const unsigned long intervaloCalculo = 3600000; // 1 hora em milissegundos (simulação)
+
+// Pinos dos LEDs
+const int LED_VERDE = 25;
+const int LED_AMARELO = 26;
+const int LED_VERMELHO = 27;
+
+void setup() {  
+  Serial.begin(115200);  
+  thing.add_wifi(SSID, SSID_PASSWORD);
+  delay(500);
+
+  // Configuração dos LEDs como saída
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(LED_AMARELO, OUTPUT);
+  pinMode(LED_VERMELHO, OUTPUT);
+
+  // Configuração inicial do Thinger.io
+  thing["Consumo Energia"] >> outputValue(consumoEnergia);
+
+  // Mensagem inicial no console
+  Serial.println("Sistema iniciado com sucesso!");
+  Serial.println("Monitorando o consumo de energia...");
+}
+
+void loop() {
+  leituraSensor();        // Ler o consumo do potenciômetro
+  verificaConsumo();      // Verificar o nível de consumo e acender LEDs
+  atualizaConsumo();      // Atualizar consumo acumulado
+  thing.handle();         // Comunicação com Thinger.io
+  delay(1000);            // Aguardar antes do próximo ciclo
+}
+
+// Função para leitura do valor do potenciômetro
+void leituraSensor() {
+  valorPotenciometro = analogRead(34);  // Leitura analógica do potenciômetro
+  valorConsumo = map(valorPotenciometro, 0, 4095, 0, 10); // Corrente em Amperes
+
+  Serial.print("Valor do potenciômetro: ");
+  Serial.println(valorPotenciometro);
+  Serial.print("Corrente simulada: ");
+  Serial.print(valorConsumo);
+  Serial.println(" A");
+}
+
+// Função para verificar o consumo e acender os LEDs correspondentes
+void verificaConsumo() {
+  if (consumoEnergia < 50) {
+    // Consumo baixo
+    Serial.println("Consumo baixo: Parabéns! Continue economizando energia.");
+    digitalWrite(LED_VERDE, HIGH);
+    digitalWrite(LED_AMARELO, LOW);
+    digitalWrite(LED_VERMELHO, LOW);
+  } else if (consumoEnergia >= 50 && consumoEnergia < 200) {
+    // Consumo moderado
+    Serial.println("Consumo moderado: Atenção! Considere reduzir o uso de aparelhos.");
+    digitalWrite(LED_VERDE, LOW);
+    digitalWrite(LED_AMARELO, HIGH);
+    digitalWrite(LED_VERMELHO, LOW);
+  } else {
+    // Consumo alto
+    Serial.println("Consumo alto: Alerta! Sua conta de energia pode subir.");
+    digitalWrite(LED_VERDE, LOW);
+    digitalWrite(LED_AMARELO, LOW);
+    digitalWrite(LED_VERMELHO, HIGH);
+  }
+}
+
+// Função para atualizar o consumo acumulado
+void atualizaConsumo() {
+  if (millis() - ultimoCalculo >= intervaloCalculo) {
+    // Cálculo da potência (P = V * I, assumindo 220V)
+    float potencia = 220.0 * valorConsumo; // Potência em Watts
+    consumoEnergia += (potencia / 1000.0) * (intervaloCalculo / 3600000.0); // Consumo em kWh
+    ultimoCalculo = millis(); // Atualiza o tempo da última medição
+
+    // Exibição no console
+    Serial.print("Consumo acumulado: ");
+    Serial.print(consumoEnergia);
+    Serial.println(" kWh");
+  }
+}
+
+
+
+copiar e colar no DIAGRAM.JSON do wokwi
+
+
+{
+  "version": 1,
+  "author": "leonardo araki",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -19.2, "left": 100.84, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led-green",
+      "top": -51.6,
+      "left": -121,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led-yellow",
+      "top": 25.2,
+      "left": -178.6,
+      "attrs": { "color": "yellow" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led-red",
+      "top": -109.2,
+      "left": -53.8,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "resistor-green",
+      "top": 80.75,
+      "left": -153.6,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "resistor-yellow",
+      "top": -53.65,
+      "left": -19.2,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "resistor-red",
+      "top": 3.95,
+      "left": -96,
+      "attrs": { "value": "220" }
+    },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -87.7, "left": 220.6, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:GND", "led-green:GND", "", [] ],
+    [ "esp:GND", "led-yellow:GND", "", [] ],
+    [ "esp:GND", "led-red:GND", "", [] ],
+    [ "esp:25", "resistor-green:1", "", [] ],
+    [ "resistor-green:2", "led-green:VCC", "", [] ],
+    [ "esp:26", "resistor-yellow:1", "", [] ],
+    [ "resistor-yellow:2", "led-yellow:VCC", "", [] ],
+    [ "esp:27", "resistor-red:1", "", [] ],
+    [ "resistor-red:2", "led-red:VCC", "", [] ],
+    [ "led-red:C", "esp:GND.2", "green", [ "v38.4", "h240.4" ] ],
+    [ "led-green:C", "esp:GND.2", "green", [ "v0" ] ],
+    [ "led-yellow:C", "esp:GND.2", "green", [ "v-105.6", "h374.8" ] ],
+    [ "led-green:A", "resistor-red:1", "green", [ "v0" ] ],
+    [ "led-red:A", "resistor-yellow:1", "green", [ "v0" ] ],
+    [ "led-yellow:A", "resistor-green:1", "green", [ "v0" ] ],
+    [ "resistor-yellow:2", "esp:27", "green", [ "v0" ] ],
+    [ "resistor-red:2", "esp:25", "green", [ "v0" ] ],
+    [ "resistor-green:2", "esp:26", "green", [ "v0" ] ],
+    [ "pot1:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "pot1:VCC", "esp:3V3", "red", [ "v9.6", "h-192.8" ] ],
+    [ "pot1:SIG", "esp:34", "green", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
+
+
+
+
+
+
+
+
+
+
